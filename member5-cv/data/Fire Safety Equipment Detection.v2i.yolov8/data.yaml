@@ -1,0 +1,13 @@
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 6
+
+names:
+  - branch_pipe
+  - fire_alarm_panel
+  - fire_extinguisher
+  - hose_reel
+  - manual_call_point
+  - sprinkler
