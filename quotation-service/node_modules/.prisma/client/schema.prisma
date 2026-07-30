@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Equipment {
+  id        Int      @id @default(autoincrement())
+  name      String
+  type      String
+  price     Float
+  quantity  Int
+  createdAt DateTime @default(now())
+}
+
+model Quotation {
+  id               Int            @id @default(autoincrement())
+  projectName      String
+  equipmentCost    Float
+  installationCost Float
+  gst              Float
+  maintenanceCost  Float
+  totalCost        Float
+  createdAt        DateTime       @default(now())
+  breakdown        Json?
+  reports          Report[]
+  uploadedPlans    UploadedPlan[]
+}
+
+model Report {
+  id          Int        @id @default(autoincrement())
+  reportName  String
+  description String
+  createdAt   DateTime   @default(now())
+  quotationId Int?
+  quotation   Quotation? @relation(fields: [quotationId], references: [id])
+}
+
+model UploadedPlan {
+  id          Int        @id @default(autoincrement())
+  fileName    String
+  uploadedAt  DateTime   @default(now())
+  quotationId Int?
+  quotation   Quotation? @relation(fields: [quotationId], references: [id])
+}

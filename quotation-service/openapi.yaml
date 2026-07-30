@@ -1,0 +1,224 @@
+openapi: 3.0.3
+info:
+  title: Fire Safety Planning Quotation System API
+  version: 1.0.0
+  description: Swagger-style API reference for the backend services.
+servers:
+  - url: https://fire-safety-planning-quotation-system-53kf.onrender.com
+    description: Render production
+  - url: http://localhost:5000
+    description: Local development
+paths:
+  /:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Server is running
+  /api/equipment:
+    get:
+      summary: List equipment
+      responses:
+        '200':
+          description: Equipment list
+    post:
+      summary: Create equipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, type, price, quantity]
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                price:
+                  type: number
+                quantity:
+                  type: number
+      responses:
+        '201':
+          description: Equipment created
+  /api/quotations/calculate:
+    post:
+      summary: Calculate quotation preview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectName, items]
+              properties:
+                projectName:
+                  type: string
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      equipmentId:
+                        type: integer
+                      quantity:
+                        type: integer
+      responses:
+        '200':
+          description: Quotation preview generated
+  /api/quotations:
+    get:
+      summary: List quotations
+      responses:
+        '200':
+          description: Quotations list
+    post:
+      summary: Create quotation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectName, items]
+              properties:
+                projectName:
+                  type: string
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      equipmentId:
+                        type: integer
+                      quantity:
+                        type: integer
+      responses:
+        '201':
+          description: Quotation created
+  /api/quotations/{id}:
+    get:
+      summary: Get quotation by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Quotation data
+  /api/quotations/{id}/pdf:
+    get:
+      summary: Download quotation PDF
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: PDF file
+  /api/reports:
+    get:
+      summary: List reports
+      responses:
+        '200':
+          description: Reports list
+    post:
+      summary: Create report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reportName, description]
+              properties:
+                reportName:
+                  type: string
+                description:
+                  type: string
+                quotationId:
+                  type: integer
+      responses:
+        '201':
+          description: Report created
+  /api/reports/{id}/pdf:
+    get:
+      summary: Download report PDF
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: PDF file
+  /api/uploaded-plans:
+    get:
+      summary: List uploaded plans
+      responses:
+        '200':
+          description: Uploaded plan records
+    post:
+      summary: Upload a plan file
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                planFile:
+                  type: string
+                  format: binary
+                fileName:
+                  type: string
+                quotationId:
+                  type: integer
+      responses:
+        '201':
+          description: Plan uploaded
+  /api/ml/process-result:
+    post:
+      summary: Process ML result
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectName]
+              properties:
+                projectName:
+                  type: string
+                recommendedEquipment:
+                  type: array
+                  items:
+                    type: string
+                detections:
+                  type: array
+                equipment_recommendations:
+                  type: array
+                review_flags:
+                  type: array
+                rule_refs:
+                  type: array
+                client_id:
+                  type: integer
+                building_type:
+                  type: string
+                compliance_standard:
+                  type: string
+                compliance_score:
+                  type: number
+                reportDate:
+                  type: string
+                engineerRemarks:
+                  type: string
+      responses:
+        '200':
+          description: Quotation and report generated

@@ -13,10 +13,7 @@ app = FastAPI(
     title="Fire Safety CV API"
 )
 
-PROCESS_RESULT_URL = (
-    "https://fire-safety-planning-quotation-system-53kf.onrender.com"
-    "/api/ml/process-result"
-)
+PROCESS_RESULT_URL = "http://localhost:5000/api/ml/process-result"
 
 
 @app.get("/")
