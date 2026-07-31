@@ -7,14 +7,20 @@ import cv2
 import numpy as np
 import easyocr
 import re
-from fastapi.middleware.cors import CORSMiddleware
+
 
 from fastapi import FastAPI, UploadFile, File
 from preprocessing.preprocess import preprocess_from_bytes
 from detection.inference import run_inference
 
 # Initialize OCR once
-reader = easyocr.Reader(['en'], gpu=False)
+reader = None
+
+def get_reader():
+    global reader
+    if reader is None:
+        reader = easyocr.Reader(['en'], gpu=False)
+    return reader
 
 # Load .env before importing project modules
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
@@ -80,7 +86,7 @@ async def detect(file: UploadFile = File(...)):
                 image = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
             # ---------- OCR ----------
-            ocr_results = reader.readtext(image, detail=0)
+            ocr_results = get_reader().readtext(image, detail=0)
             text = " ".join(ocr_results)
 
             print("\n========== OCR TEXT ==========")
