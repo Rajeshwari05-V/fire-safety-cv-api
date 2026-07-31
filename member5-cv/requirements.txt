@@ -15,3 +15,4 @@ easyocr
 pydantic==2.6.1
 
 requests
+PyMuPDF==1.24.9
