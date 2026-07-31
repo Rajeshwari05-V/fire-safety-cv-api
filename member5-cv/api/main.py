@@ -5,13 +5,20 @@ from fastapi.middleware.cors import CORSMiddleware
 import fitz  # PyMuPDF
 import cv2
 import numpy as np
-
-# Load .env before importing project modules
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+import easyocr
+import re
+from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi import FastAPI, UploadFile, File
 from preprocessing.preprocess import preprocess_from_bytes
 from detection.inference import run_inference
+
+# Initialize OCR once
+reader = easyocr.Reader(['en'], gpu=False)
+
+# Load .env before importing project modules
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
 
 app = FastAPI(title="Fire Safety CV API")
 
@@ -43,6 +50,9 @@ async def detect(file: UploadFile = File(...)):
         # Read uploaded file
         file_bytes = await file.read()
 
+        # Default OCR text
+        text = ""
+
         # ==========================
         # Handle PDF uploads
         # ==========================
@@ -69,31 +79,65 @@ async def detect(file: UploadFile = File(...)):
             else:
                 image = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
+            # ---------- OCR ----------
+            ocr_results = reader.readtext(image, detail=0)
+            text = " ".join(ocr_results)
+
+            print("\n========== OCR TEXT ==========")
+            print(text)
+            print("================================\n")
+
         # ==========================
         # Handle JPG / PNG uploads
         # ==========================
         else:
             image = preprocess_from_bytes(file_bytes)
-
+                 
         # Run YOLO inference
         detections = run_inference(image)
 
         # Count detected equipment
         equipment_count = {}
 
-        for detection in detections:
-            label = detection.get("type") or detection.get("class")
+# ---------- OCR equipment extraction ----------
+        patterns = {
+            "fire_extinguisher_dry_powder": r"fire\s*extinguisher\s*x?(\d+)",
+            "smoke_detector": r"smoke\s*detector\s*x?(\d+)",
+            "sprinkler_head": r"sprinkler\s*head\s*x?(\d+)",
+            "exit_sign": r"exit\s*sign\s*x?(\d+)",
+            "fire_alarm_panel": r"fire\s*alarm\s*panel\s*x?(\d+)",
+            "hose_reel_cabinet": r"hose\s*reel\s*cabinet\s*x?(\d+)"
+        }
 
-            if label:
-                equipment_count[label] = equipment_count.get(label, 0) + 1
+        # Try OCR first
+        if text:
+            text_lower = text.lower()
+
+            for item, pattern in patterns.items():
+                match = re.search(pattern, text_lower)
+
+                if match:
+                    equipment_count[item] = int(match.group(1))
+
+        # If OCR found nothing, use YOLO detections
+        if not equipment_count:
+            for detection in detections:
+                label = detection.get("type") or detection.get("class")
+
+                if label:
+                    equipment_count[label] = equipment_count.get(label, 0) + 1
 
         # Convert YOLO labels into quotation-service equipment names
         equipment_mapping = {
             "fire_extinguisher": "fire_extinguisher_dry_powder",
             "fire_extinguisher_dry_powder": "fire_extinguisher_dry_powder",
             "smoke_detector": "smoke_detector",
-            "emergency_light": "emergency_light",
+            "sprinkler_head": "sprinkler_head",
+            "exit_sign": "exit_sign",
             "fire_alarm": "fire_alarm",
+            "fire_alarm_panel": "fire_alarm_panel",
+            "hose_reel_cabinet": "hose_reel_cabinet",
+            "emergency_light": "emergency_light",
         }
 
         # Build equipment recommendations
@@ -116,6 +160,7 @@ async def detect(file: UploadFile = File(...)):
                 }
             ]
 
+        
         # JSON payload expected by quotation-service
         payload = {
             "projectName": "Floor Plan Detection",
