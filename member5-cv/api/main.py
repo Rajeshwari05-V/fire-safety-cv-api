@@ -74,7 +74,9 @@ async def detect(file: UploadFile = File(...)):
             page = pdf.load_page(0)
 
             # Render first page at higher resolution
-            pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
+            pix = page.get_pixmap(matrix=fitz.Matrix(1, 1))
+
+            pdf.close()
 
             img = np.frombuffer(pix.samples, dtype=np.uint8)
             img = img.reshape(pix.height, pix.width, pix.n)
@@ -87,6 +89,7 @@ async def detect(file: UploadFile = File(...)):
 
             # ---------- OCR ----------
             ocr_results = get_reader().readtext(image, detail=0)
+            del image
             text = " ".join(ocr_results)
 
             print("\n========== OCR TEXT ==========")
